@@ -1,0 +1,302 @@
+<title>Hamilton Real Estate — Market Dynamics</title>
+<style>
+  .viz-root{
+    color-scheme:light;
+    --page:#f9f9f7; --surface:#fcfcfb;
+    --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --demand:#2a78d6; --supply:#eb6834; --new:#1baf7a; --price:#4a3aa7;
+    --good:#0ca30c; --bad:#d03b3b;
+    --seller:rgba(12,163,12,0.10); --balanced:rgba(137,135,129,0.10); --buyer:rgba(208,59,59,0.10);
+    --seller-ink:#006300; --buyer-ink:#d03b3b;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--ink); background:var(--page);
+    max-width:1080px; margin:0 auto; padding:28px 20px 64px;
+  }
+  @media (prefers-color-scheme:dark){ :root:where(:not([data-theme="light"])) .viz-root{
+    color-scheme:dark; --page:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --demand:#3987e5; --supply:#d95926; --new:#199e70; --price:#9085e9;
+    --good:#0ca30c; --bad:#e34948;
+    --seller:rgba(12,163,12,0.14); --balanced:rgba(137,135,129,0.14); --buyer:rgba(227,73,72,0.14);
+    --seller-ink:#0ca30c; --buyer-ink:#e34948;
+  }}
+  :root[data-theme="dark"] .viz-root{
+    color-scheme:dark; --page:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --demand:#3987e5; --supply:#d95926; --new:#199e70; --price:#9085e9;
+    --good:#0ca30c; --bad:#e34948;
+    --seller:rgba(12,163,12,0.14); --balanced:rgba(137,135,129,0.14); --buyer:rgba(227,73,72,0.14);
+    --seller-ink:#0ca30c; --buyer-ink:#e34948;
+  }
+  .viz-root h1{font-size:26px; margin:0 0 4px; letter-spacing:-0.02em;}
+  .viz-root .sub{color:var(--ink2); font-size:14px; margin:0 0 6px;}
+  .viz-root .stamp{color:var(--muted); font-size:12px; margin:0 0 24px;}
+  .viz-root h2{font-size:16px; margin:34px 0 4px; letter-spacing:-0.01em;}
+  .viz-root .lede{color:var(--ink2); font-size:13.5px; line-height:1.5; margin:0 0 14px; max-width:80ch;}
+  .grid6{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media(min-width:760px){ .grid6{grid-template-columns:repeat(6,1fr);} }
+  .tile{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 12px 10px;}
+  .tile .lab{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; line-height:1.2; min-height:26px;}
+  .tile .val{font-size:22px; font-weight:650; margin:4px 0 1px; letter-spacing:-0.01em;}
+  .tile .yoy{font-size:12px; font-weight:600;}
+  .tile .yoy .cap{color:var(--muted); font-weight:500;}
+  .up{color:var(--good);} .down{color:var(--bad);}
+  .spark{display:block; width:100%; height:34px; margin-top:8px;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 16px 10px; margin-top:12px;}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--ink2); margin:2px 2px 8px;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:12px; height:3px; border-radius:2px; display:inline-block;}
+  .chart-wrap{overflow-x:auto;}
+  svg.chart{display:block; width:100%; min-width:520px; height:auto;}
+  .tt{position:absolute; pointer-events:none; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:7px 9px; font-size:12px; color:var(--ink); box-shadow:0 4px 14px rgba(0,0,0,0.12); opacity:0; transition:opacity .08s; z-index:5; white-space:nowrap;}
+  .tt b{font-weight:650;} .tt .row{display:flex; align-items:center; gap:6px; margin-top:2px; color:var(--ink2);}
+  .tt .row i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .bands{display:flex; gap:14px; font-size:12px; color:var(--ink2); margin:8px 2px 0; flex-wrap:wrap;}
+  .bands span{display:inline-flex; align-items:center; gap:6px;}
+  .bands i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  table.yoy{width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;}
+  table.yoy th, table.yoy td{padding:7px 8px; text-align:right; border-bottom:1px solid var(--grid); font-variant-numeric:tabular-nums;}
+  table.yoy th:first-child, table.yoy td:first-child{text-align:left;}
+  table.yoy thead th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.03em;}
+  table.yoy tbody tr:last-child td{border-bottom:none; font-weight:600;}
+  .note{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5;}
+  .pos{position:relative;}
+</style>
+
+<div class="viz-root">
+  <h1>Hamilton Real Estate — Market Dynamics</h1>
+  <p class="sub">All communities · monthly, 2016–present</p>
+  <p class="stamp">Source: HouseSigma market-trends feed · last full month <span id="lbl_last"></span> · YoY = vs. same month a year earlier · auto-updated on the 6th of each month</p>
+
+  <h2>Where each metric stands — all property types <span id="lbl_kpi" style="color:var(--muted);font-weight:400"></span></h2>
+  <div class="grid6" id="tiles"></div>
+
+  <h2>Supply vs. demand</h2>
+  <p class="lede">Two counts on one scale: homes <b>actively listed</b> (supply, orange) and homes <b>sold</b> per month (demand, blue). Through 2021 the lines nearly touched — almost everything listed sold. As supply pulls above demand, the widening gap between the lines is the market softening toward buyers.</p>
+  <div class="card">
+    <div class="legend">
+      <span><i style="background:var(--supply)"></i>Active listings (supply)</span>
+      <span><i style="background:var(--demand)"></i>Homes sold (demand)</span>
+    </div>
+    <div class="chart-wrap pos"><svg class="chart" id="c_sd" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_sd"></div></div>
+  </div>
+
+  <h2>Market balance — months of inventory</h2>
+  <p class="lede">Active listings ÷ homes sold = how many months to clear all inventory at the current pace. It is the cleanest single read on who holds the leverage: under ~2 months is a seller's market, ~2–4 balanced, above ~4 a buyer's market. Hamilton has crossed the whole spectrum since 2016.</p>
+  <div class="card">
+    <div class="chart-wrap pos"><svg class="chart" id="c_moi" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_moi"></div></div>
+    <div class="bands">
+      <span><i style="background:var(--seller)"></i>Seller's market (&lt;2 mo)</span>
+      <span><i style="background:var(--balanced)"></i>Balanced (2–4 mo)</span>
+      <span><i style="background:var(--buyer)"></i>Buyer's market (&gt;4 mo)</span>
+    </div>
+  </div>
+
+  <h2>Year-over-year, by year (all property types)</h2>
+  <p class="lede">Annual averages — read down each column to see how supply, demand, days-on-market, and pricing have shifted year to year. Months-of-inventory (active ÷ sold) and SNLR (sales ÷ new listings) are the two balance gauges: rising inventory and falling SNLR both mean the market is tilting toward buyers.</p>
+  <div class="card" style="padding-top:6px">
+    <table class="yoy" id="tbl"></table>
+    <p class="note" id="tnote"></p>
+  </div>
+
+  <h2><span id="lbl_year"></span>, month by month</h2>
+  <p class="lede">Zoom into the current year. The <b>SNLR</b> column (sales ÷ new listings) is the tightest demand-vs-supply gauge — under 40% favours buyers, over 60% favours sellers. Watch whether extra spring sales actually tighten the ratio, or just get matched by a matching wave of new listings. The bar is scaled 0–80% with a tick at the 40% buyer/balanced line.</p>
+  <div class="card" style="padding-top:6px">
+    <table class="yoy" id="tbl26"></table>
+    <p class="note" id="tnote26"></p>
+  </div>
+
+  <h2>By property type — detached vs. semi vs. condo</h2>
+  <p class="lede">The "all types" number hides a wide split. <b>Detached</b> homes are usually the tightest segment; <b>condo apartments</b> tend to carry the most inventory and the softest prices; <b>semi-detached</b> sits between but trades in low volumes, so its month-to-month figures are noisy. The table below is the latest full month; the charts show each segment's trend.</p>
+  <div class="card" style="padding-top:6px">
+    <table class="yoy" id="tbl_type"></table>
+    <p class="note" id="tnote_type"></p>
+  </div>
+
+  <h3 style="font-size:14px;margin:22px 2px 2px;color:var(--ink)">Months of inventory by type <span style="color:var(--muted);font-weight:400;font-size:12px">— 3-month average</span></h3>
+  <div class="card">
+    <div class="legend">
+      <span><i style="background:var(--demand)"></i>Detached</span>
+      <span><i style="background:var(--new)"></i>Semi-detached</span>
+      <span><i style="background:var(--supply)"></i>Condo apt</span>
+    </div>
+    <div class="chart-wrap pos"><svg class="chart" id="c_tmoi" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_tmoi"></div></div>
+    <div class="bands">
+      <span><i style="background:var(--seller)"></i>Seller's (&lt;2)</span>
+      <span><i style="background:var(--balanced)"></i>Balanced (2–4)</span>
+      <span><i style="background:var(--buyer)"></i>Buyer's (&gt;4)</span>
+    </div>
+  </div>
+
+  <h3 style="font-size:14px;margin:22px 2px 2px;color:var(--ink)">Median sold price by type <span style="color:var(--muted);font-weight:400;font-size:12px">— 3-month average</span></h3>
+  <div class="card">
+    <div class="legend">
+      <span><i style="background:var(--demand)"></i>Detached</span>
+      <span><i style="background:var(--new)"></i>Semi-detached</span>
+      <span><i style="background:var(--supply)"></i>Condo apt</span>
+    </div>
+    <div class="chart-wrap pos"><svg class="chart" id="c_tpr" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_tpr"></div></div>
+  </div>
+</div>
+
+<script>
+const PAYLOAD = __PAYLOAD__;
+const D = PAYLOAD.data, A = PAYLOAD.annual, TS = PAYLOAD.ts, TT = PAYLOAD.tt;
+const LATEST = PAYLOAD.latest, PREV = PAYLOAD.prev, CURYEAR = PAYLOAD.curyear;
+const cur = D[D.length-1], yearAgo = D[D.length-13];
+const fmtK = v => v>=1000 ? (v/1000).toFixed(v>=10000?0:1)+'k' : ''+Math.round(v);
+const fmtMoney = v => '$'+Math.round(v/1000)+'k';
+const fmtInt = v => Math.round(v).toLocaleString();
+const MNAMES=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+const MN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const longMonth=p=>MNAMES[+p.slice(5)]+' '+p.slice(0,4);
+const shortMonth=p=>MN[+p.slice(5)]+' '+p.slice(0,4);
+document.getElementById('lbl_last').textContent=longMonth(LATEST);
+document.getElementById('lbl_kpi').textContent='('+longMonth(LATEST)+' vs '+longMonth(PREV)+')';
+document.getElementById('lbl_year').textContent=CURYEAR;
+
+// ---------- KPI tiles ----------
+const METS=[
+  {k:'nl',lab:'New listings',fmt:fmtInt},{k:'ac',lab:'Active listings',fmt:fmtInt},
+  {k:'sd',lab:'Homes sold',fmt:fmtInt},{k:'dom',lab:'Days on market',fmt:v=>v+'d'},
+  {k:'pdom',lab:'Property days on mkt',fmt:v=>v+'d'},{k:'price',lab:'Median sold price',fmt:fmtMoney},
+];
+function sparkPath(vals,w,h,pad){
+  const mn=Math.min(...vals),mx=Math.max(...vals),rng=(mx-mn)||1;
+  const X=i=>pad+i/(vals.length-1)*(w-2*pad), Y=v=>h-2-(v-mn)/rng*(h-4);
+  return vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+}
+const tilesEl=document.getElementById('tiles');
+METS.forEach(m=>{
+  const c=cur[m.k],y=yearAgo[m.k],pct=(c-y)/y*100;
+  const arrow=pct>0.5?'▲':pct<-0.5?'▼':'▬', cls=Math.abs(pct)<0.5?'':(pct>0?'up':'down');
+  const vals=D.map(r=>r[m.k]);
+  const el=document.createElement('div'); el.className='tile';
+  el.innerHTML=`<div class="lab">${m.lab}</div><div class="val">${m.fmt(c)}</div>
+    <div class="yoy ${cls}">${arrow} ${pct>0?'+':''}${pct.toFixed(Math.abs(pct)<1?1:0)}% <span class="cap">YoY</span></div>
+    <svg class="spark" viewBox="0 0 150 34" preserveAspectRatio="none"><path d="${sparkPath(vals,150,34,2)}" fill="none" stroke="var(--demand)" stroke-width="1.6"/></svg>`;
+  tilesEl.appendChild(el);
+});
+
+// ---------- generic line chart ----------
+function buildLine(svgId,ttId,rows,series,opts){
+  const svg=document.getElementById(svgId), W=840,H=340,m={l:56,r:18,t:14,b:30}, n=rows.length;
+  const allv=series.flatMap(s=>rows.map(r=>r[s.k]).filter(v=>v!=null));
+  let ymin=opts.ymin!=null?opts.ymin:Math.min(...allv), ymax=opts.ymax!=null?opts.ymax:Math.max(...allv);
+  const pd=(ymax-ymin)*0.08; ymax+=pd; if(opts.ymin==null) ymin=Math.max(0,ymin-pd);
+  const X=i=>m.l+i/(n-1)*(W-m.l-m.r), Y=v=>H-m.b-(v-ymin)/(ymax-ymin)*(H-m.t-m.b);
+  const NS='http://www.w3.org/2000/svg', mk=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  svg.innerHTML='';
+  (opts.bands||[]).forEach(b=>{
+    const y0=Y(Math.min(b.hi,ymax)),y1=Y(Math.max(b.lo,ymin));
+    svg.appendChild(mk('rect',{x:m.l,y:y0,width:W-m.l-m.r,height:Math.max(0,y1-y0),fill:b.fill}));
+    if(b.label){const tx=mk('text',{x:W-m.r-4,y:y0+13,'text-anchor':'end','font-size':11,fill:b.ink||'var(--muted)','font-weight':600});tx.textContent=b.label;svg.appendChild(tx);}
+  });
+  const ticks=opts.yticks||5;
+  for(let g=0;g<=ticks;g++){
+    const v=ymin+(ymax-ymin)*g/ticks,yy=Y(v);
+    svg.appendChild(mk('line',{x1:m.l,y1:yy,x2:W-m.r,y2:yy,stroke:'var(--grid)','stroke-width':1}));
+    const t=mk('text',{x:m.l-8,y:yy+4,'text-anchor':'end','font-size':11,fill:'var(--muted)','font-variant-numeric':'tabular-nums'});t.textContent=opts.yfmt(v);svg.appendChild(t);
+  }
+  rows.forEach((r,i)=>{ if(r.p.slice(5)==='01'){const xx=X(i);
+    svg.appendChild(mk('line',{x1:xx,y1:H-m.b,x2:xx,y2:H-m.b+4,stroke:'var(--axis)','stroke-width':1}));
+    const t=mk('text',{x:xx,y:H-m.b+16,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});t.textContent=r.p.slice(0,4);svg.appendChild(t);} });
+  svg.appendChild(mk('line',{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,stroke:'var(--axis)','stroke-width':1}));
+  series.forEach(s=>{
+    const d=rows.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(r[s.k]).toFixed(1)).join(' ');
+    svg.appendChild(mk('path',{d,fill:'none',stroke:s.color,'stroke-width':2.2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    svg.appendChild(mk('circle',{cx:X(n-1),cy:Y(rows[n-1][s.k]),r:3.2,fill:s.color,stroke:'var(--surface)','stroke-width':1.5}));
+  });
+  const tt=document.getElementById(ttId);
+  const cross=mk('line',{x1:0,y1:m.t,x2:0,y2:H-m.b,stroke:'var(--axis)','stroke-width':1,'stroke-dasharray':'3 3',opacity:0});svg.appendChild(cross);
+  const dots=series.map(s=>{const c=mk('circle',{r:4,fill:s.color,stroke:'var(--surface)','stroke-width':1.5,opacity:0});svg.appendChild(c);return c;});
+  const over=mk('rect',{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:'transparent'});svg.appendChild(over);
+  function move(ev){
+    const rect=svg.getBoundingClientRect(),px=(ev.clientX-rect.left)/rect.width*W;
+    let i=Math.round((px-m.l)/(W-m.l-m.r)*(n-1));i=Math.max(0,Math.min(n-1,i));
+    const xx=X(i);cross.setAttribute('x1',xx);cross.setAttribute('x2',xx);cross.setAttribute('opacity',1);
+    dots.forEach((c,si)=>{c.setAttribute('cx',xx);c.setAttribute('cy',Y(rows[i][series[si].k]));c.setAttribute('opacity',1);});
+    const r=rows[i];tt.style.opacity=1;
+    tt.innerHTML=`<b>${r.p}</b>`+series.map(s=>`<div class="row"><i style="background:${s.color}"></i>${s.name}: <b style="color:var(--ink)">${s.tfmt(r[s.k])}</b></div>`).join('');
+    let left=(xx/W)*rect.width+12; if(left>rect.width-150) left-=170; tt.style.left=left+'px'; tt.style.top='14px';
+  }
+  over.addEventListener('mousemove',move);
+  over.addEventListener('mouseleave',()=>{tt.style.opacity=0;cross.setAttribute('opacity',0);dots.forEach(c=>c.setAttribute('opacity',0));});
+}
+
+buildLine('c_sd','tt_sd',D,
+  [{k:'ac',name:'Active listings',color:'var(--supply)',tfmt:fmtInt},{k:'sd',name:'Homes sold',color:'var(--demand)',tfmt:fmtInt}],
+  {yfmt:v=>fmtK(Math.round(v)),yticks:5});
+
+D.forEach(r=>r.moi=r.ac/r.sd);
+buildLine('c_moi','tt_moi',D,
+  [{k:'moi',name:'Months of inventory',color:'var(--demand)',tfmt:v=>v.toFixed(1)+' mo'}],
+  {yfmt:v=>v.toFixed(1),yticks:6,ymin:0,bands:[
+    {lo:0,hi:2,fill:'var(--seller)',label:"Seller's market",ink:'var(--seller-ink)'},
+    {lo:2,hi:4,fill:'var(--balanced)',label:'Balanced'},
+    {lo:4,hi:99,fill:'var(--buyer)',label:"Buyer's market",ink:'var(--buyer-ink)'}]});
+
+// ---------- annual table ----------
+const cols=[['nl','New list.'],['ac','Active'],['sd','Sold'],['dom','DOM'],['pdom','Prop DOM'],['moi','Mo. inv.'],['snlr','SNLR %'],['price','Median $']];
+function fmtCell(k,v){ if(k==='price')return fmtMoney(v); if(k==='snlr')return v+'%'; if(k==='moi'||k==='dom'||k==='pdom')return v; return fmtInt(v); }
+let html='<thead><tr><th>Year</th>'+cols.map(c=>`<th>${c[1]}</th>`).join('')+'</tr></thead><tbody>';
+A.forEach(a=>{html+=`<tr><td>${a.y}${a.n<12?' <span style="color:var(--muted);font-weight:400">(YTD)</span>':''}</td>`+cols.map(c=>`<td>${fmtCell(c[0],a[c[0]])}</td>`).join('')+'</tr>';});
+html+='</tbody>'; document.getElementById('tbl').innerHTML=html;
+document.getElementById('tnote').textContent='SNLR = sales-to-new-listings ratio (>60% favours sellers, <40% favours buyers). The final year is a year-to-date average.';
+
+// ---------- current-year month-by-month ----------
+function snlrInk(v){ return v<40?'var(--buyer-ink)':v<=60?'var(--ink2)':'var(--seller-ink)'; }
+const mYr=D.filter(r=>r.p.slice(0,4)===CURYEAR);
+let h26='<thead><tr><th>Month</th><th>New list.</th><th>Active</th><th>Sold</th><th>SNLR %</th><th>Mo. inv.</th><th>DOM</th><th>Median $</th></tr></thead><tbody>';
+mYr.forEach(r=>{
+  const snlr=r.sd/r.nl*100,moi=r.ac/r.sd,ink=snlrInk(snlr),w=Math.round(snlr/80*100);
+  h26+=`<tr><td>${MN[+r.p.slice(5)]}</td><td>${fmtInt(r.nl)}</td><td>${fmtInt(r.ac)}</td><td>${fmtInt(r.sd)}</td>`+
+    `<td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">`+
+    `<div style="flex:0 0 80px;height:8px;border-radius:4px;background:var(--grid);position:relative">`+
+    `<div style="position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--axis)"></div>`+
+    `<div style="position:absolute;left:0;top:0;height:100%;width:${w}%;background:${ink};opacity:.85;border-radius:4px"></div></div>`+
+    `<b style="color:${ink};min-width:44px;display:inline-block;text-align:right">${snlr.toFixed(1)}%</b></div></td>`+
+    `<td>${moi.toFixed(1)}</td><td>${r.dom}</td><td>${fmtMoney(r.price)}</td></tr>`;
+});
+h26+='</tbody>'; document.getElementById('tbl26').innerHTML=h26;
+document.getElementById('tnote26').textContent='SNLR bar scaled 0–80%; the tick marks the 40% buyer/balanced line. Excludes the partial current month, which is still in progress.';
+
+// ---------- property-type comparison table ----------
+const tc=[['nl','New'],['ac','Active'],['sd','Sold'],['dom','DOM'],['pdom','Prop DOM'],['snlr','SNLR %'],['moi','Mo. inv.'],['price','Median $'],['pyoy','Price YoY']];
+let ht=`<thead><tr><th>Type (${shortMonth(LATEST)})</th>`+tc.map(c=>`<th>${c[1]}</th>`).join('')+'</tr></thead><tbody>';
+TT.forEach(r=>{
+  ht+=`<tr><td>${r.label}</td>`+tc.map(c=>{
+    let v=r[c[0]];
+    if(c[0]==='price')v=fmtMoney(v);
+    else if(c[0]==='snlr')v=`<span style="color:${snlrInk(v)};font-weight:600">${v}%</span>`;
+    else if(c[0]==='pyoy'){const cl=v>0.3?'var(--good)':v<-0.3?'var(--bad)':'var(--ink2)';v=`<span style="color:${cl};font-weight:600">${v>0?'+':''}${v}%</span>`;}
+    else if(c[0]==='moi')v=v.toFixed(1);
+    else v=fmtInt(v);
+    return `<td>${v}</td>`;
+  }).join('')+'</tr>';
+});
+ht+='</tbody>'; document.getElementById('tbl_type').innerHTML=ht;
+const d=TT[1],s=TT[2],c=TT[3];
+document.getElementById('tnote_type').textContent=`Latest full month. Semi-detached sells only ~10–25 homes a month, so its single-month ratios swing widely — read its trend, not any one month. ${CURYEAR} YTD: detached SNLR ${d.snlr_ytd}% / ${d.moi_ytd}mo, semi ${s.snlr_ytd}% / ${s.moi_ytd}mo, condo ${c.snlr_ytd}% / ${c.moi_ytd}mo.`;
+
+// ---------- by-type charts ----------
+const tseries=[
+  {k:'dm',name:'Detached',color:'var(--demand)'},
+  {k:'sm',name:'Semi-detached',color:'var(--new)'},
+  {k:'cm',name:'Condo apt',color:'var(--supply)'},
+];
+buildLine('c_tmoi','tt_tmoi',TS,tseries.map(s=>({...s,tfmt:v=>v.toFixed(1)+' mo'})),
+  {yfmt:v=>v.toFixed(1),yticks:5,ymin:0,bands:[
+    {lo:0,hi:2,fill:'var(--seller)',label:"Seller's"},
+    {lo:2,hi:4,fill:'var(--balanced)',label:'Balanced'},
+    {lo:4,hi:99,fill:'var(--buyer)',label:"Buyer's"}]});
+const pseries=[
+  {k:'dp',name:'Detached',color:'var(--demand)'},
+  {k:'sp',name:'Semi-detached',color:'var(--new)'},
+  {k:'cp',name:'Condo apt',color:'var(--supply)'},
+];
+buildLine('c_tpr','tt_tpr',TS,pseries.map(s=>({...s,tfmt:fmtMoney})),{yfmt:fmtMoney,yticks:5});
+</script>
