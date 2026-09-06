@@ -1,0 +1,36 @@
+name: Refresh Hamilton dashboard
+
+# Fetches the latest HouseSigma data on a GitHub-hosted runner (which has
+# open internet access) and commits the refreshed CSV + HTML to main.
+# The Claude routine then pulls main, republishes the artifact, and summarizes.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 3rd of each month, 12:00 UTC — the prior month is complete in HouseSigma by then.
+    - cron: "0 12 3 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build dashboard from HouseSigma
+        run: python3 scripts/build_hamilton_dashboard.py
+
+      - name: Commit and push if data changed
+        run: |
+          if git diff --quiet -- hamilton_market_trends.csv hamilton_dynamics.html; then
+            echo "No new month of data; nothing to commit."
+            exit 0
+          fi
+          latest=$(tail -n 1 hamilton_market_trends.csv | cut -d, -f1)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hamilton_market_trends.csv hamilton_dynamics.html
+          git commit -m "Refresh Hamilton market dashboard (data through ${latest})"
+          git push origin HEAD:main
