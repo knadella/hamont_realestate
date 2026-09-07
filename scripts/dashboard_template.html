@@ -140,6 +140,19 @@
     </div>
     <div class="chart-wrap pos"><svg class="chart" id="c_tpr" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_tpr"></div></div>
   </div>
+
+  <h2>Price level, indexed to 2014 = 100</h2>
+  <p class="lede">Each segment is set to 100 at its 2014 average, so these lines show <b>appreciation</b>, not dollar level — a $330k condo and a $660k detached start from the same line. The gap that opens up is how much more one segment has grown than another since 2014. The end label on each line is its current index (e.g. 200 = doubled).</p>
+  <div class="card">
+    <div class="legend">
+      <span><i style="background:var(--price)"></i>All types</span>
+      <span><i style="background:var(--demand)"></i>Detached</span>
+      <span><i style="background:var(--new)"></i>Semi-detached</span>
+      <span><i style="background:var(--supply)"></i>Condo apt</span>
+    </div>
+    <div class="chart-wrap pos"><svg class="chart" id="c_idx" viewBox="0 0 840 340" preserveAspectRatio="xMidYMid meet"></svg><div class="tt" id="tt_idx"></div></div>
+    <p class="note" id="tnote_idx"></p>
+  </div>
 </div>
 
 <script>
@@ -183,7 +196,7 @@ METS.forEach(m=>{
 
 // ---------- generic line chart ----------
 function buildLine(svgId,ttId,rows,series,opts){
-  const svg=document.getElementById(svgId), W=840,H=340,m={l:56,r:18,t:14,b:30}, n=rows.length;
+  const svg=document.getElementById(svgId), W=840,H=340,m={l:56,r:(opts.mr||18),t:14,b:30}, n=rows.length;
   const allv=series.flatMap(s=>rows.map(r=>r[s.k]).filter(v=>v!=null));
   let ymin=opts.ymin!=null?opts.ymin:Math.min(...allv), ymax=opts.ymax!=null?opts.ymax:Math.max(...allv);
   const pd=(ymax-ymin)*0.08; ymax+=pd; if(opts.ymin==null) ymin=Math.max(0,ymin-pd);
@@ -205,10 +218,16 @@ function buildLine(svgId,ttId,rows,series,opts){
     svg.appendChild(mk('line',{x1:xx,y1:H-m.b,x2:xx,y2:H-m.b+4,stroke:'var(--axis)','stroke-width':1}));
     const t=mk('text',{x:xx,y:H-m.b+16,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});t.textContent=r.p.slice(0,4);svg.appendChild(t);} });
   svg.appendChild(mk('line',{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,stroke:'var(--axis)','stroke-width':1}));
+  if(opts.refline!=null){
+    const yy=Y(opts.refline);
+    svg.appendChild(mk('line',{x1:m.l,y1:yy,x2:W-m.r,y2:yy,stroke:'var(--axis)','stroke-width':1.2,'stroke-dasharray':'4 3'}));
+    if(opts.reflabel){const t=mk('text',{x:m.l+4,y:yy-5,'font-size':11,fill:'var(--muted)','font-weight':600});t.textContent=opts.reflabel;svg.appendChild(t);}
+  }
   series.forEach(s=>{
     const d=rows.map((r,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(r[s.k]).toFixed(1)).join(' ');
     svg.appendChild(mk('path',{d,fill:'none',stroke:s.color,'stroke-width':2.2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     svg.appendChild(mk('circle',{cx:X(n-1),cy:Y(rows[n-1][s.k]),r:3.2,fill:s.color,stroke:'var(--surface)','stroke-width':1.5}));
+    if(opts.endlabels){const t=mk('text',{x:X(n-1)+7,y:Y(rows[n-1][s.k])+4,'font-size':11,fill:s.color,'font-weight':650,'font-variant-numeric':'tabular-nums'});t.textContent=(opts.endfmt||s.tfmt)(rows[n-1][s.k]);svg.appendChild(t);}
   });
   const tt=document.getElementById(ttId);
   const cross=mk('line',{x1:0,y1:m.t,x2:0,y2:H-m.b,stroke:'var(--axis)','stroke-width':1,'stroke-dasharray':'3 3',opacity:0});svg.appendChild(cross);
@@ -299,4 +318,21 @@ const pseries=[
   {k:'cp',name:'Condo apt',color:'var(--supply)'},
 ];
 buildLine('c_tpr','tt_tpr',TS,pseries.map(s=>({...s,tfmt:fmtMoney})),{yfmt:fmtMoney,yticks:5});
+
+// ---------- price indexed to 2014 = 100 ----------
+const IDX = PAYLOAD.idx;
+const idxfmt=v=>Math.round(v).toString();
+const iseries=[
+  {k:'all',name:'All types',color:'var(--price)'},
+  {k:'det',name:'Detached',color:'var(--demand)'},
+  {k:'semi',name:'Semi-detached',color:'var(--new)'},
+  {k:'condo',name:'Condo apt',color:'var(--supply)'},
+];
+buildLine('c_idx','tt_idx',IDX,iseries.map(s=>({...s,tfmt:idxfmt})),
+  {yfmt:idxfmt,yticks:5,mr:52,refline:100,reflabel:'2014 = 100',endlabels:true,endfmt:idxfmt});
+(function(){
+  const last=IDX[IDX.length-1], base='2014';
+  const g=(k)=>Math.round(last[k]);
+  document.getElementById('tnote_idx').textContent=`Index = 3-month-average median price ÷ that segment's ${base} average × 100. Latest: detached ${g('det')}, semi ${g('semi')}, condo ${g('condo')}, all types ${g('all')} — i.e. a value of 200 means the price has doubled since ${base}.`;
+})();
 </script>

@@ -171,7 +171,23 @@ def main():
     TT = [build_row("All types", AD), build_row("Detached", DD),
           build_row("Semi-detached", SD), build_row("Condo apt", CD)]
 
-    payload = {"data": data, "annual": annual, "ts": TS, "tt": TT,
+    # ---- median price indexed to the 2014 calendar-year average = 100 ----
+    # Indexing removes the level gap between segments so appreciation is comparable.
+    idx_periods = [r[0] for r in allf if r[0] >= "2014-01"]
+
+    def base14(d):
+        v = [d[p]["price"] for p in d if p[:4] == "2014"]
+        return sum(v) / len(v) if v else None
+
+    def idxcol(d):
+        b = base14(d)
+        return [d[p]["price"] / b * 100 for p in idx_periods]
+
+    ia, idd, iss, ic = sma(idxcol(AD)), sma(idxcol(DD)), sma(idxcol(SD)), sma(idxcol(CD))
+    IDX = [{"p": idx_periods[i], "all": round(ia[i], 1), "det": round(idd[i], 1),
+            "semi": round(iss[i], 1), "condo": round(ic[i], 1)} for i in range(len(idx_periods))]
+
+    payload = {"data": data, "annual": annual, "ts": TS, "tt": TT, "idx": IDX,
                "latest": latest, "prev": prev, "curyear": curyear}
 
     with open(TMPL) as f:
